@@ -140,9 +140,9 @@ nrow(dataset) - sum(complete.cases(dataset))
 ```
 ## [1] 2304
 ```
-We have 2304 missing values in the steps variable, which also correspond to the number of lines with missing values. Thus, we can conclude that all missing values are occur in the steps column. 
+We have **2304 missing values** in the steps variable, which also correspond to the number of lines with missing values. Thus, we can conclude that all missing values are occur in the steps column. 
 
-We can try to fill in these missing values: one way to do so is to fill in each missing step count with the average step count of the same 5-minute window, using the intra-day pattern we just plotted earlier.   
+We can try to fill in these missing values: **one way to do so is to fill in each missing step count with the average step count of the same 5-minute window**, using the intra-day pattern we just plotted earlier.   
 We must first join the original table with the per_interval table, matching their interval variables. We then apply a condition, to only impute the average intraday step only when the data is missing. 
 
 

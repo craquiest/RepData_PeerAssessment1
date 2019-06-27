@@ -441,8 +441,8 @@ print(peak_int)</code></pre>
 <pre><code>## [1] 2304</code></pre>
 <pre class="r"><code>nrow(dataset) - sum(complete.cases(dataset)) </code></pre>
 <pre><code>## [1] 2304</code></pre>
-<p>We have 2304 missing values in the steps variable, which also correspond to the number of lines with missing values. Thus, we can conclude that all missing values are occur in the steps column.</p>
-<p>We can try to fill in these missing values: one way to do so is to fill in each missing step count with the average step count of the same 5-minute window, using the intra-day pattern we just plotted earlier.<br />
+<p>We have <strong>2304 missing values</strong> in the steps variable, which also correspond to the number of lines with missing values. Thus, we can conclude that all missing values are occur in the steps column.</p>
+<p>We can try to fill in these missing values: <strong>one way to do so is to fill in each missing step count with the average step count of the same 5-minute window</strong>, using the intra-day pattern we just plotted earlier.<br />
 We must first join the original table with the per_interval table, matching their interval variables. We then apply a condition, to only impute the average intraday step only when the data is missing.</p>
 <pre class="r"><code>new_dataset &lt;- left_join(dataset, 
                             select(per_interval, interval, avg_steps),
