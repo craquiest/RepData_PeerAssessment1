@@ -11,9 +11,7 @@ output:
 It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. In this report, we will analyse sample data from such a device, look at average daily on in-day pattern.   
 The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
-```{r setoptions, echo= FALSE, message = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 
 
@@ -21,18 +19,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Let us first load the data into R and have a look at its characteristics. 
 
-```{r libraries, echo=TRUE, message = FALSE}
+
+```r
 library(tidyverse)
 library(lubridate)
 ```
 
-```{r loading}
+
+```r
 unzip("activity.zip")
 dataset <- as_tibble(read.csv("activity.csv"))
 str(dataset)
 ```
 
-We notice **`r ncol(dataset)` variables**, and **`r nrow(dataset)` observations**, with quite a few NAs already in the first few lines.  
+```
+## Classes 'tbl_df', 'tbl' and 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+We notice **3 variables**, and **17568 observations**, with quite a few NAs already in the first few lines.  
 
 
 
@@ -40,7 +47,8 @@ We notice **`r ncol(dataset)` variables**, and **`r nrow(dataset)` observations*
 
 We can now summarize the data by day, taking the sum of the steps on each day. Note that we need to remove NAs as we do so.  
     
-```{r perday}
+
+```r
 per_day <- dataset %>% group_by(date) %>%
         summarise(total_steps = sum(steps, na.rm = TRUE))
 
@@ -49,16 +57,19 @@ daily_median <- median(per_day$total_steps, na.rm = TRUE)
 ```
 
     
-We find that on **average** the subject has taken **`r format(round(daily_avg), scientific = F)` steps per day**, rounding to the nearest unit.  
-The **median** of the total number of steps is **`r format(round(daily_median), scientific = F)`**. Hence, we can already observe some skew in the distribution of steps.  
+We find that on **average** the subject has taken **9354 steps per day**, rounding to the nearest unit.  
+The **median** of the total number of steps is **10395**. Hence, we can already observe some skew in the distribution of steps.  
 We can confirm this visually by looking at the histogram of the daily total number of steps.
 
 
-```{r histdaily }
+
+```r
 hist(per_day$total_steps,breaks=10, col = "grey",
      main = "Distribution of daily steps", xlab = "total steps per day")
 rug(per_day$total_steps)
 ```
+
+![](PA1_template_files/figure-html/histdaily-1.png)<!-- -->
 
 We can see a **large number of days (10 at least) have a step count below 2000**. It would be interesting to see if we can find a reason for this pattern. 
 
@@ -68,29 +79,44 @@ We can see a **large number of days (10 at least) have a step count below 2000**
 
 One other distribution we can look at, is the **intra-day distribution**. We group the data again, this time by interval variable. 
 
-```{r perint}
+
+```r
 per_interval <- dataset %>% group_by(interval) %>%
         summarise(avg_steps = mean(steps, na.rm=TRUE))
 ```
 
 By doing this we can now visualize the average daily pattern of our subject's step count. 
 
-```{r timeseries}
 
+```r
 with(per_interval,plot(interval, avg_steps, type = "l",ylab= "steps"))
 title(main = "Average intra-day pattern of step-count")
 ```
 
+![](PA1_template_files/figure-html/timeseries-1.png)<!-- -->
+
 The line is flat before 5 am, which is probably due to sleep. There is a spike of activity between 8 and 10am. We can find out what exact 5-minute interval has on average the  highest number of steps. 
 
-```{r peak}
+
+```r
 peak_int <- per_interval[which.max(per_interval$avg_steps),]$interval
 peak_count <- round(max(per_interval$avg_steps))
 print(peak_int)
+```
+
+```
+## [1] 835
+```
+
+```r
 print(peak_count)
 ```
 
-We find that, on average, **the peak 5-minute interval** occurs at around **8:35 am**, with a step count of **`r peak_count`** steps.
+```
+## [1] 206
+```
+
+We find that, on average, **the peak 5-minute interval** occurs at around **8:35 am**, with a step count of **206** steps.
 
 
 
@@ -98,16 +124,29 @@ We find that, on average, **the peak 5-minute interval** occurs at around **8:35
 As mentioned earlier, we noticed quite a few missing values just looking at the first few lines of the dataset. Let"s find out how many values we are actually missing. 
 
 
-```{r origNAcount}
+
+```r
 (na_count <- sum(is.na(dataset$steps)))
+```
+
+```
+## [1] 2304
+```
+
+```r
 nrow(dataset) - sum(complete.cases(dataset)) 
 ```
-We have `r na_count` missing values in the steps variable, which also correspond to the number of lines with missing values. Thus, we can conclude that all missing values are occur in the steps column. 
+
+```
+## [1] 2304
+```
+We have 2304 missing values in the steps variable, which also correspond to the number of lines with missing values. Thus, we can conclude that all missing values are occur in the steps column. 
 
 We can try to fill in these missing values: one way to do so is to fill in each missing step count with the average step count of the same 5-minute window, using the intra-day pattern we just plotted earlier.   
 We must first join the original table with the per_interval table, matching their interval variables. We then apply a condition, to only impute the average intraday step only when the data is missing. 
 
-```{r newdata}
+
+```r
 new_dataset <- left_join(dataset, 
                             select(per_interval, interval, avg_steps),
                             "interval")
@@ -119,14 +158,27 @@ new_dataset <- new_dataset %>%
 
 We now have a new data table, with identical size and structure compared to the original, but with no missing values. 
 
-```{r newNAcount}
+
+```r
 (new_na_count <- sum(is.na(new_dataset$steps)))
+```
+
+```
+## [1] 0
+```
+
+```r
 nrow(dataset) - sum(complete.cases(new_dataset)) 
+```
+
+```
+## [1] 0
 ```
 
 Let us see what effect this operation has on daily distribution of average total steps. 
 
-```{r newDaily}
+
+```r
 new_per_day <- new_dataset %>% group_by(date) %>%
         summarise(total_steps = sum(steps, na.rm=TRUE))
 
@@ -134,22 +186,26 @@ new_daily_avg <- mean(new_per_day$total_steps, na.rm = TRUE)
 new_daily_median <- median(new_per_day$total_steps, na.rm = TRUE)
 ```
 
-The **mean** total daily step count is now **`r format(round(new_daily_avg,2), scientific = F)`** (compared to `r format(round(daily_avg), scientific = F)` earlier). 
-As for the **median** total daily step count, it is now **`r format(round(new_daily_median), scientific = F)`** (compared to `r format(round(daily_median), scientific = F)` earlier).   
+The **mean** total daily step count is now **10766.19** (compared to 9354 earlier). 
+As for the **median** total daily step count, it is now **10766** (compared to 10395 earlier).   
 Both estimates have changed, quite significantly for the mean. Interestingly, **mean and median have converged**, which would suggest that the skew we observed earlier may no longer be as strong.  
 
 Let us see if this hypothesis can pass the eye test. 
-```{r newHist }
+
+```r
 hist(new_per_day$total_steps,breaks=10, col = "grey",
      main = "Distribution of daily steps - Imputed", xlab = "total steps per day")
 rug(new_per_day$total_steps)
 ```
 
+![](PA1_template_files/figure-html/newHist-1.png)<!-- -->
+
 The first thing we notice that the **number of days with a very low step count has diminished**.   
 
 When we can compare it the original histogram, side-by-side, we also observe that the histogram has gotten "taller" at the center. This suggests a **re-distribution of the low count days towards the mean**, which is **consistent with our imputing method** of replacing missing values with the average step count of the corresponding time slot. 
 
-```{r histComp }
+
+```r
 par(mfrow=c(1,2))
 hist(per_day$total_steps, breaks=10, col = "grey",
      main = "Original data", xlab =  "daily steps", ylim = c(0,25))
@@ -160,9 +216,25 @@ hist(new_per_day$total_steps, breaks=10, col = "grey",
 rug(new_per_day$total_steps)
 ```
 
-```{r summaryComp}
+![](PA1_template_files/figure-html/histComp-1.png)<!-- -->
+
+
+```r
 summary(per_day$total_steps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##       0    6778   10395    9354   12811   21194
+```
+
+```r
 summary(new_per_day$total_steps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10766   10766   12811   21194
 ```
 
 By comparing the summary outputs, we can confirm our hypothesis. The original data had days with zero total step count, suggesting that summarizing operation was *effectively* replacing missing values with zeros. This was bringing down the average significantly.
@@ -178,7 +250,8 @@ One last analysis, we could do is to compare the pattern of activity of our subj
 In order to achieve this, we create a new indicator variable in our new dataset, to differentiate weekend observations from weekday ones.
 
 
-```{r weekday}
+
+```r
 new_dataset <- new_dataset %>%
         mutate(wkday = weekdays(ymd(date))) %>%
         mutate(label = ifelse(
@@ -190,7 +263,8 @@ new_per_interval <- new_dataset %>% group_by(interval,label) %>%
 
 We can now plot and compare the 2 patterns. 
 
-```{r paneledTimeSeries}
+
+```r
 g <- ggplot(new_per_interval, aes(interval, avg_steps, color = label))
 g <- g + geom_line() + facet_grid(label ~. , scales = "fixed")
 g <- g + labs(title = "Intraday activity patterns" )
@@ -199,8 +273,9 @@ g <- g + labs(x = "time of day", y = "step count" )
 g <- g + geom_hline(aes(yintercept = 150, linetype = "twodash") )
 g <- g + geom_vline(aes(xintercept = peak_int, linetype = "dotdash") )
 print(g)
-
 ```
+
+![](PA1_template_files/figure-html/paneledTimeSeries-1.png)<!-- -->
 
 There are a few observations we can make:  
 
